@@ -60,11 +60,16 @@ export default {
 					DEFAULT: 'hsl(var(--warning))',
 					foreground: 'hsl(var(--warning-foreground))'
 				},
-				notion: {
-					gray: 'hsl(var(--notion-gray))',
-					'gray-light': 'hsl(var(--notion-gray-light))',
-					blue: 'hsl(var(--notion-blue))',
-					'blue-light': 'hsl(var(--notion-blue-light))'
+				purple: {
+					primary: 'hsl(var(--purple-primary))',
+					secondary: 'hsl(var(--purple-secondary))',
+					accent: 'hsl(var(--purple-accent))',
+					muted: 'hsl(var(--purple-muted))'
+				},
+				dark: {
+					surface: 'hsl(var(--dark-surface))',
+					elevated: 'hsl(var(--dark-surface-elevated))',
+					border: 'hsl(var(--dark-border))'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
@@ -79,12 +84,14 @@ export default {
 			},
 			backgroundImage: {
 				'gradient-subtle': 'var(--gradient-subtle)',
-				'gradient-card': 'var(--gradient-card)'
+				'gradient-card': 'var(--gradient-card)',
+				'gradient-purple': 'var(--gradient-purple)'
 			},
 			boxShadow: {
 				'notion-sm': 'var(--shadow-sm)',
 				'notion-md': 'var(--shadow-md)',
-				'notion-lg': 'var(--shadow-lg)'
+				'notion-lg': 'var(--shadow-lg)',
+				'purple': 'var(--shadow-purple)'
 			},
 			transitionTimingFunction: {
 				'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
