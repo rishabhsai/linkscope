@@ -79,6 +79,7 @@ interface SortableLinkProps {
   onStatusChange: (id: string, status: LocalAnalyzedLink['status']) => void
   onTagClick: (tag: string) => void
   onLinkClick: (link: LocalAnalyzedLink) => void
+  getStatusIcon: (status: string) => React.ReactElement
   isDragging?: boolean
 }
 
@@ -89,6 +90,7 @@ const SortableLink: React.FC<SortableLinkProps> = ({
   onStatusChange, 
   onTagClick, 
   onLinkClick,
+  getStatusIcon,
   isDragging = false
 }) => {
   const {
@@ -128,19 +130,6 @@ const SortableLink: React.FC<SortableLinkProps> = ({
         return 'border-green-200 bg-green-50'
       default:
         return 'border-gray-200 bg-gray-50'
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'todo':
-        return <Circle className="h-4 w-4 text-orange-500" />
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'archived':
-        return <Archive className="h-4 w-4 text-gray-500" />
-      default:
-        return <Target className="h-4 w-4 text-blue-500" />
     }
   }
 
@@ -307,6 +296,20 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
   const [selectedLink, setSelectedLink] = useState<LocalAnalyzedLink | null>(null)
   const [editingLink, setEditingLink] = useState<LocalAnalyzedLink | null>(null)
   
+  // Helper functions
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'todo':
+        return <Circle className="h-4 w-4 text-orange-500" />
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case 'archived':
+        return <Archive className="h-4 w-4 text-gray-500" />
+      default:
+        return <Target className="h-4 w-4 text-blue-500" />
+    }
+  }
+  
   // Form states
   const [newLink, setNewLink] = useState({
     url: '',
@@ -314,8 +317,8 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
     summary: '',
     tags: '',
     context: '',
-    priority: 'medium' as const,
-    status: 'active' as const,
+    priority: 'medium' as 'low' | 'medium' | 'high',
+    status: 'active' as 'active' | 'todo' | 'completed' | 'archived',
   })
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [useAI, setUseAI] = useState(true)
@@ -700,6 +703,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                       onStatusChange={handleStatusChange}
                       onTagClick={handleTagClick}
                       onLinkClick={handleLinkClick}
+                      getStatusIcon={getStatusIcon}
                     />
                   ))}
                 </AnimatePresence>
@@ -752,7 +756,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   URL *
                 </label>
                 <Input
@@ -760,89 +764,87 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                   value={newLink.url}
                   onChange={(e) => setNewLink(prev => ({ ...prev, url: e.target.value }))}
                   disabled={!!editingLink}
+                  className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                 />
               </div>
               
-              {!useAI && (
+              {useAI ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Title
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Additional Context
                   </label>
-                  <Input
-                    placeholder="Link title"
-                    value={newLink.title}
-                    onChange={(e) => setNewLink(prev => ({ ...prev, title: e.target.value }))}
+                  <Textarea
+                    placeholder="Optional: Help AI understand what you're looking for..."
+                    value={newLink.context}
+                    onChange={(e) => setNewLink(prev => ({ ...prev, context: e.target.value }))}
+                    rows={3}
+                    className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                   />
                 </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Title
+                    </label>
+                    <Input
+                      placeholder="Link title"
+                      value={newLink.title}
+                      onChange={(e) => setNewLink(prev => ({ ...prev, title: e.target.value }))}
+                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Summary *
+                    </label>
+                    <Input
+                      placeholder="Brief description"
+                      value={newLink.summary}
+                      onChange={(e) => setNewLink(prev => ({ ...prev, summary: e.target.value }))}
+                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Tags
+                    </label>
+                    <Input
+                      placeholder="tag1, tag2, tag3"
+                      value={newLink.tags}
+                      onChange={(e) => setNewLink(prev => ({ ...prev, tags: e.target.value }))}
+                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Context
+                    </label>
+                    <Textarea
+                      placeholder="Additional context or notes"
+                      value={newLink.context}
+                      onChange={(e) => setNewLink(prev => ({ ...prev, context: e.target.value }))}
+                      rows={3}
+                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                    />
+                  </div>
+                </>
               )}
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Summary *
-                </label>
-                <Input
-                  placeholder="Brief description"
-                  value={newLink.summary}
-                  onChange={(e) => setNewLink(prev => ({ ...prev, summary: e.target.value }))}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isTodo"
+                  checked={newLink.status === 'todo'}
+                  onChange={(e) => setNewLink(prev => ({ ...prev, status: e.target.checked ? 'todo' : 'active' }))}
+                  className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-700 rounded focus:ring-blue-500"
                 />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tags
+                <label htmlFor="isTodo" className="text-sm font-medium text-gray-300">
+                  Mark as Todo
                 </label>
-                <Input
-                  placeholder="tag1, tag2, tag3"
-                  value={newLink.tags}
-                  onChange={(e) => setNewLink(prev => ({ ...prev, tags: e.target.value }))}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Context
-                </label>
-                <Textarea
-                  placeholder="Additional context or notes"
-                  value={newLink.context}
-                  onChange={(e) => setNewLink(prev => ({ ...prev, context: e.target.value }))}
-                  rows={3}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Priority
-                  </label>
-                  <Select value={newLink.priority} onValueChange={(value) => setNewLink(prev => ({ ...prev, priority: value as any }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <Select value={newLink.status} onValueChange={(value) => setNewLink(prev => ({ ...prev, status: value as any }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="todo">Todo</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
               
               <div className="flex justify-end gap-2">
