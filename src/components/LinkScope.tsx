@@ -598,6 +598,17 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Link
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                onClick={() => {
+                  localStorage.removeItem('username');
+                  window.location.reload();
+                }}
+              >
+                Change Username
+              </Button>
               <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 hover:bg-gray-800">
                 <Settings className="h-4 w-4" />
               </Button>
