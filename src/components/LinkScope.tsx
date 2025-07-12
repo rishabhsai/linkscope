@@ -276,6 +276,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
   const [draggedLink, setDraggedLink] = useState<LocalAnalyzedLink | null>(null)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showDetailDialog, setShowDetailDialog] = useState(false)
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [selectedLink, setSelectedLink] = useState<LocalAnalyzedLink | null>(null)
   const [editingLink, setEditingLink] = useState<LocalAnalyzedLink | null>(null)
   
@@ -558,6 +559,51 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
     setShowDetailDialog(true)
   }
 
+  const exportToCSV = () => {
+    const csvContent = [
+      ['URL', 'Title', 'Summary', 'Tags', 'Status', 'Created At', 'Context'],
+      ...links.map(link => [
+        link.url,
+        link.title || '',
+        link.summary,
+        link.tags.join(', '),
+        link.status,
+        new Date(link.createdAt).toLocaleDateString(),
+        link.context || ''
+      ])
+    ].map(row => row.map(field => `"${field.replace(/"/g, '""')}"`).join(',')).join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `linkscope-links-${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast.success('Links exported to CSV!')
+  }
+
+  const exportToJSON = () => {
+    const jsonContent = JSON.stringify(links, null, 2)
+    const blob = new Blob([jsonContent], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `linkscope-links-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast.success('Links exported to JSON!')
+  }
+
+  const handleChangeUsername = () => {
+    localStorage.removeItem('username')
+    window.location.reload()
+  }
+
   const getAllTags = () => {
     const tagSet = new Set<string>()
     links.forEach(link => {
@@ -598,18 +644,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Link
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-gray-700 text-gray-300 hover:bg-gray-800"
-                onClick={() => {
-                  localStorage.removeItem('username');
-                  window.location.reload();
-                }}
-              >
-                Change Username
-              </Button>
-              <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 hover:bg-gray-800">
+              <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 hover:bg-gray-800" onClick={() => setShowSettingsDialog(true)}>
                 <Settings className="h-4 w-4" />
               </Button>
             </div>
@@ -981,6 +1016,80 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                 </div>
               </>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Settings Dialog */}
+        <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+          <DialogContent className="max-w-md bg-gray-900 border-gray-700 text-white">
+            <DialogHeader>
+              <DialogTitle className="text-white">Settings</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Export Section */}
+              <div>
+                <h3 className="text-lg font-medium text-white mb-3">Export Data</h3>
+                <div className="space-y-2">
+                  <Button
+                    onClick={exportToCSV}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    Export to CSV
+                  </Button>
+                  <Button
+                    onClick={exportToJSON}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    Export to JSON
+                  </Button>
+                </div>
+              </div>
+
+              <Separator className="bg-gray-700" />
+
+              {/* User Management Section */}
+              <div>
+                <h3 className="text-lg font-medium text-white mb-3">User Management</h3>
+                <div className="space-y-2">
+                  <Button
+                    onClick={handleChangeUsername}
+                    variant="outline"
+                    className="w-full border-gray-700 text-gray-300 hover:bg-gray-800"
+                  >
+                    Change Username
+                  </Button>
+                </div>
+              </div>
+
+              <Separator className="bg-gray-700" />
+
+              {/* Stats Section */}
+              <div>
+                <h3 className="text-lg font-medium text-white mb-3">Statistics</h3>
+                <div className="space-y-2 text-sm text-gray-300">
+                  <div className="flex justify-between">
+                    <span>Total Links:</span>
+                    <span className="text-white">{links.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Active Links:</span>
+                    <span className="text-white">{links.filter(l => l.status === 'active').length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Todo Items:</span>
+                    <span className="text-white">{links.filter(l => l.status === 'todo').length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Completed:</span>
+                    <span className="text-white">{links.filter(l => l.status === 'completed').length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Unique Tags:</span>
+                    <span className="text-white">{getAllTags().length}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
