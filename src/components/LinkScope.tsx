@@ -156,11 +156,10 @@ const SortableLink: React.FC<SortableLinkProps> = ({
       exit={{ opacity: 0, y: -20 }}
       className={`
         group relative bg-gray-800 rounded-lg border border-gray-700 shadow-sm hover:shadow-md 
-        transition-all duration-200 hover:border-gray-600 cursor-pointer
+        transition-all duration-200 hover:border-gray-600
         ${isSortableDragging ? 'opacity-50 scale-95' : ''}
         ${link.status === 'completed' ? 'opacity-60' : ''}
       `}
-      onClick={() => onLinkClick(link)}
     >
       {/* Drag Handle */}
       <div
@@ -191,7 +190,10 @@ const SortableLink: React.FC<SortableLinkProps> = ({
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {getPlatformIcon(link.platform)}
               <div className="flex-1 min-w-0">
-                <h3 className={`font-medium truncate ${link.status === 'completed' ? 'text-gray-400 line-through' : 'text-white'}`}>
+                <h3 
+                  className={`font-medium truncate cursor-pointer hover:text-blue-400 transition-colors ${link.status === 'completed' ? 'text-gray-400 line-through' : 'text-white'}`}
+                  onClick={() => onLinkClick(link)}
+                >
                   {link.title || link.summary}
                 </h3>
                 <p className="text-sm text-gray-400 truncate">
@@ -338,7 +340,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
     summary: '',
     tags: '',
     context: '',
-    status: 'active' as 'active' | 'todo' | 'completed',
+    status: 'active' as 'active' | 'todo' | 'completed' | 'archived',
   })
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [useAI, setUseAI] = useState(true)

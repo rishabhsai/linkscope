@@ -30,7 +30,7 @@ export interface LocalAnalyzedLink {
   type: 'video' | 'link'
   platform?: 'youtube' | 'instagram' | 'tiktok' | 'other'
   // Simplified fields
-  status: 'active' | 'todo' | 'completed'
+  status: 'active' | 'todo' | 'completed' | 'archived'
   priority?: string
   dueDate?: Date
   userId: string
@@ -133,7 +133,7 @@ export const linkService = {
     summary: string
     tags: string[]
     context?: string
-    status?: 'active' | 'todo' | 'completed'
+    status?: 'active' | 'todo' | 'completed' | 'archived'
   }): Promise<LocalAnalyzedLink> {
     const user_id = getUsername()
     const linkInfo = this.detectLinkType(linkData.url)
