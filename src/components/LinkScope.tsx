@@ -225,41 +225,41 @@ const SortableLink: React.FC<SortableLinkProps> = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(link)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
+              <DropdownMenuItem onClick={() => onEdit(link)} className="focus:bg-blue-900/20 focus:text-blue-300">
+                <Edit className="h-4 w-4 mr-2 text-blue-500" />
+                <span className="font-medium">Edit</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onLinkClick(link)}>
-                <Eye className="h-4 w-4 mr-2" />
-                View Details
+              <DropdownMenuItem onClick={() => onLinkClick(link)} className="focus:bg-purple-900/20 focus:text-purple-300">
+                <Eye className="h-4 w-4 mr-2 text-purple-500" />
+                <span className="font-medium">View Details</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigator.clipboard.writeText(link.url)}>
-                <Copy className="h-4 w-4 mr-2" />
-                Copy URL
+              <DropdownMenuItem onClick={() => navigator.clipboard.writeText(link.url)} className="focus:bg-green-900/20 focus:text-green-300">
+                <Copy className="h-4 w-4 mr-2 text-green-500" />
+                <span className="font-medium">Copy URL</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {link.status === 'active' && (
-                <DropdownMenuItem onClick={() => onStatusChange(link.id, 'todo')}>
-                  <Circle className="h-4 w-4 mr-2" />
-                  Mark as Todo
+                <DropdownMenuItem onClick={() => onStatusChange(link.id, 'todo')} className="focus:bg-orange-900/20 focus:text-orange-300">
+                  <Circle className="h-4 w-4 mr-2 text-orange-500" />
+                  <span className="font-medium">Mark as Todo</span>
                 </DropdownMenuItem>
               )}
               {link.status === 'todo' && (
-                <DropdownMenuItem onClick={() => onStatusChange(link.id, 'active')}>
-                  <Target className="h-4 w-4 mr-2" />
-                  Remove from Todos
+                <DropdownMenuItem onClick={() => onStatusChange(link.id, 'active')} className="focus:bg-blue-900/20 focus:text-blue-300">
+                  <Target className="h-4 w-4 mr-2 text-blue-500" />
+                  <span className="font-medium">Remove from Todos</span>
                 </DropdownMenuItem>
               )}
               {link.status === 'completed' && (
-                <DropdownMenuItem onClick={() => onStatusChange(link.id, 'active')}>
-                  <Target className="h-4 w-4 mr-2" />
-                  Remove from Todos
+                <DropdownMenuItem onClick={() => onStatusChange(link.id, 'active')} className="focus:bg-blue-900/20 focus:text-blue-300">
+                  <Target className="h-4 w-4 mr-2 text-blue-500" />
+                  <span className="font-medium">Remove from Todos</span>
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onDelete(link.id)} className="text-red-600">
+              <DropdownMenuItem onClick={() => onDelete(link.id)} className="text-red-600 focus:bg-red-900/20 focus:text-red-400">
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                <span className="font-medium">Delete</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -978,17 +978,29 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                 </>
               )}
               
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isTodo"
-                  checked={newLink.status === 'todo'}
-                  onChange={(e) => setNewLink(prev => ({ ...prev, status: e.target.checked ? 'todo' : 'active' }))}
-                  className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-700 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="isTodo" className="text-sm font-medium text-gray-300">
-                  Mark as Todo
-                </label>
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    id="isTodo"
+                    checked={newLink.status === 'todo'}
+                    onChange={(e) => setNewLink(prev => ({ ...prev, status: e.target.checked ? 'todo' : 'active' }))}
+                    className="sr-only"
+                  />
+                  <label 
+                    htmlFor="isTodo" 
+                    className={`flex items-center gap-2 cursor-pointer px-3 py-2 rounded-md transition-all duration-200 ${
+                      newLink.status === 'todo' 
+                        ? 'bg-orange-900/30 text-orange-300 border border-orange-500/50' 
+                        : 'bg-gray-700/50 text-gray-300 border border-gray-600 hover:bg-gray-700 hover:text-white'
+                    }`}
+                  >
+                    <Circle className={`h-4 w-4 transition-colors ${
+                      newLink.status === 'todo' ? 'text-orange-500' : 'text-gray-400'
+                    }`} />
+                    <span className="text-sm font-medium">Mark as Todo</span>
+                  </label>
+                </div>
               </div>
               
               <div className="flex justify-end gap-2">
