@@ -400,8 +400,12 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
   }
 
   const handleAddLink = async () => {
-    if (!newLink.url || !newLink.summary) {
-      toast.error('Please fill in required fields')
+    if (!newLink.url) {
+      toast.error('Please enter a URL')
+      return
+    }
+    if (!useAI && !newLink.summary) {
+      toast.error('Please enter a summary')
       return
     }
 
