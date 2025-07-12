@@ -18,11 +18,21 @@ export interface Database {
           id: string
           user_id: string // username
           url: string
+          title: string | null
           summary: string
           tags: string[]
           context: string | null
           type: 'video' | 'link'
           platform: 'youtube' | 'instagram' | 'tiktok' | 'other'
+          status: string
+          priority: string
+          due_date: string | null
+          thumbnail: string | null
+          description: string | null
+          is_manually_added: boolean
+          access_count: number
+          last_accessed: string | null
+          order_index: number
           created_at: string
           updated_at: string
         }
@@ -30,11 +40,21 @@ export interface Database {
           id?: string
           user_id: string
           url: string
+          title?: string | null
           summary: string
-          tags: string[]
+          tags?: string[]
           context?: string | null
-          type: 'video' | 'link'
-          platform: 'youtube' | 'instagram' | 'tiktok' | 'other'
+          type?: 'video' | 'link'
+          platform?: 'youtube' | 'instagram' | 'tiktok' | 'other'
+          status?: string
+          priority?: string
+          due_date?: string | null
+          thumbnail?: string | null
+          description?: string | null
+          is_manually_added?: boolean
+          access_count?: number
+          last_accessed?: string | null
+          order_index?: number
           created_at?: string
           updated_at?: string
         }
@@ -42,11 +62,21 @@ export interface Database {
           id?: string
           user_id?: string
           url?: string
+          title?: string | null
           summary?: string
           tags?: string[]
           context?: string | null
           type?: 'video' | 'link'
           platform?: 'youtube' | 'instagram' | 'tiktok' | 'other'
+          status?: string
+          priority?: string
+          due_date?: string | null
+          thumbnail?: string | null
+          description?: string | null
+          is_manually_added?: boolean
+          access_count?: number
+          last_accessed?: string | null
+          order_index?: number
           created_at?: string
           updated_at?: string
         }

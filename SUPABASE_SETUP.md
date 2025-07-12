@@ -34,14 +34,30 @@ CREATE TABLE analyzed_links (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id TEXT NOT NULL, -- Username (not UUID)
   url TEXT NOT NULL,
+  title TEXT,
   summary TEXT NOT NULL,
-  tags TEXT[] NOT NULL,
+  tags TEXT[] DEFAULT '{}',
   context TEXT,
-  type TEXT CHECK (type IN ('video', 'link')) NOT NULL,
-  platform TEXT CHECK (platform IN ('youtube', 'instagram', 'tiktok', 'other')),
+  type TEXT CHECK (type IN ('video', 'link')) NOT NULL DEFAULT 'link',
+  platform TEXT CHECK (platform IN ('youtube', 'instagram', 'tiktok', 'other')) DEFAULT 'other',
+  status TEXT NOT NULL DEFAULT 'active',
+  priority TEXT NOT NULL DEFAULT 'medium',
+  due_date TIMESTAMP WITH TIME ZONE,
+  thumbnail TEXT,
+  description TEXT,
+  is_manually_added BOOLEAN DEFAULT FALSE,
+  access_count INTEGER DEFAULT 0,
+  last_accessed TIMESTAMP WITH TIME ZONE,
+  order_index INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Create indexes for better performance
+CREATE INDEX idx_analyzed_links_user_id ON analyzed_links(user_id);
+CREATE INDEX idx_analyzed_links_status ON analyzed_links(status);
+CREATE INDEX idx_analyzed_links_tags ON analyzed_links USING GIN(tags);
+CREATE INDEX idx_analyzed_links_created_at ON analyzed_links(created_at);
 
 -- Enable RLS
 ALTER TABLE analyzed_links ENABLE ROW LEVEL SECURITY;

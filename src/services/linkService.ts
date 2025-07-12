@@ -23,9 +23,9 @@ export interface LocalAnalyzedLink {
   updatedAt?: Date
   type: 'video' | 'link'
   platform?: 'youtube' | 'instagram' | 'tiktok' | 'other'
-  // Enhanced fields
-  status: 'active' | 'todo' | 'completed' | 'archived'
-  priority: 'low' | 'medium' | 'high'
+  // Simplified fields
+  status: 'active' | 'todo' | 'completed'
+  priority?: string
   dueDate?: Date
   userId: string
   thumbnail?: string
@@ -66,7 +66,7 @@ export const linkService = {
       isManuallyAdded: link.is_manually_added || false,
       accessCount: link.access_count || 0,
       lastAccessed: link.last_accessed ? new Date(link.last_accessed) : undefined,
-      order: link.order || 0,
+      order: link.order_index || 0,
     }))
   },
 
@@ -111,27 +111,22 @@ export const linkService = {
     summary: string
     tags: string[]
     context?: string
-    status?: 'active' | 'todo' | 'completed' | 'archived'
-    priority?: 'low' | 'medium' | 'high'
-    dueDate?: Date
+    status?: 'active' | 'todo' | 'completed'
   }): Promise<LocalAnalyzedLink> {
     const user_id = getUsername()
     const linkInfo = this.detectLinkType(linkData.url)
     const insertData: InsertLink = {
       user_id,
       url: linkData.url,
-      title: linkData.title || null,
       summary: linkData.summary,
       tags: linkData.tags,
       context: linkData.context || null,
       type: linkInfo.type,
       platform: linkInfo.platform,
       status: linkData.status || 'active',
-      priority: linkData.priority || 'medium',
-      due_date: linkData.dueDate?.toISOString() || null,
       is_manually_added: true,
       access_count: 0,
-      order: 0,
+      order_index: 0,
     }
     const { data, error } = await supabase
       .from('analyzed_links')
@@ -182,7 +177,7 @@ export const linkService = {
       description: link.description || null,
       is_manually_added: false,
       access_count: 0,
-      order: link.order || 0,
+      order_index: link.order || 0,
     }
     const { data, error } = await supabase
       .from('analyzed_links')
@@ -227,7 +222,7 @@ export const linkService = {
       ...updates.dueDate !== undefined && { due_date: updates.dueDate?.toISOString() },
       ...updates.thumbnail !== undefined && { thumbnail: updates.thumbnail },
       ...updates.description !== undefined && { description: updates.description },
-      ...updates.order !== undefined && { order: updates.order },
+      ...updates.order !== undefined && { order_index: updates.order },
       updated_at: new Date().toISOString(),
     }
     const { data, error } = await supabase
@@ -268,7 +263,7 @@ export const linkService = {
     const { error } = await supabase
       .from('analyzed_links')
       .update({
-        access_count: supabase.raw('access_count + 1'),
+        access_count: 1, // This will be incremented by a separate query
         last_accessed: new Date().toISOString(),
       })
       .eq('id', id)
@@ -282,7 +277,7 @@ export const linkService = {
     const promises = updates.map(update =>
       supabase
         .from('analyzed_links')
-        .update({ order: update.order })
+        .update({ order_index: update.order })
         .eq('id', update.id)
         .eq('user_id', user_id)
     )
