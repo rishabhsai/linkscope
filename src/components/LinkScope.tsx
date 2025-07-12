@@ -297,7 +297,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'all' | 'todos'>('all')
+  const [activeTab, setActiveTab] = useState<'links' | 'todos'>('links')
   const [draggedLink, setDraggedLink] = useState<LocalAnalyzedLink | null>(null)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showDetailDialog, setShowDetailDialog] = useState(false)
@@ -357,12 +357,16 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
     useEffect(() => {
       let filtered = links
 
-      if (activeTab === 'todos') {
+      if (activeTab === 'links') {
+        // Links tab: only show active and archived links (not todos)
+        filtered = filtered.filter(link => link.status === 'active' || link.status === 'archived')
+      } else if (activeTab === 'todos') {
+        // Todo tab: only show todo and completed items
         filtered = filtered.filter(link => link.status === 'todo' || link.status === 'completed')
         // Sort todos: incomplete first, completed at bottom
         filtered.sort((a, b) => {
-          if (a.status === 'completed' && b.status !== 'completed') return 1
-          if (a.status !== 'completed' && b.status === 'completed') return -1
+          if (a.status === 'completed' && b.status === 'todo') return 1
+          if (a.status === 'todo' && b.status === 'completed') return -1
           return 0
         })
       }
@@ -643,7 +647,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
 
   const getTabCounts = () => {
     return {
-      all: links.length,
+      links: links.filter(l => l.status === 'active' || l.status === 'archived').length,
       todos: links.filter(l => l.status === 'todo' || l.status === 'completed').length,
     }
   }
@@ -705,8 +709,8 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
             <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-700">
-              <TabsTrigger value="all" className="text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white">
-                All ({tabCounts.all})
+              <TabsTrigger value="links" className="text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                Links ({tabCounts.links})
               </TabsTrigger>
               <TabsTrigger value="todos" className="text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white">
                 Todos ({tabCounts.todos})
