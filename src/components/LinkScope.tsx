@@ -940,16 +940,6 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-1">
-                        Status
-                      </label>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(selectedLink.status)}
-                        <span className="capitalize text-gray-100">{selectedLink.status}</span>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">
                         Created
                       </label>
                       <p className="text-gray-100">{new Intl.DateTimeFormat('en-US', {
