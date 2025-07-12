@@ -38,6 +38,7 @@
   - [x] Click to view full details
   - [x] Edit link information
   - [x] View link history and stats
+  - [x] Click anywhere on card to open details
 
 - [x] **Tag System**
   - [x] Click tags to filter related links
@@ -49,10 +50,13 @@
   - [x] Separate todo section
   - [x] Progress tracking and due dates
   - [x] Priority levels (high, medium, low)
+  - [x] Dedicated todo tab with filtered view
 
 ## 🤖 AI & Scraping Improvements
-- [ ] **Enhanced Web Scraping**
-  - [ ] Better content extraction
+- [x] **Enhanced Web Scraping**
+  - [x] Better content extraction
+  - [x] Improved summaries with key insights
+  - [x] Better tag generation
   - [ ] Image thumbnails and previews
   - [ ] Social media post content
 
@@ -64,6 +68,7 @@
 - [x] **Improved AI System Prompt**
   - [x] Better context understanding
   - [x] More accurate categorization
+  - [x] Detailed summaries with insights
   - [ ] Sentiment analysis
 
 ## 📱 Additional Features
@@ -92,7 +97,7 @@
 ---
 
 ## 🚀 Implementation Priority
-1. **Phase 1**: UI/UX Redesign + Basic Features
-2. **Phase 2**: Advanced Interactions + Todo System  
-3. **Phase 3**: AI Improvements + Analytics
-4. **Phase 4**: Collaboration + Documentation 
+1. **Phase 1**: UI/UX Redesign + Basic Features ✅
+2. **Phase 2**: Advanced Interactions + Todo System ✅
+3. **Phase 3**: AI Improvements + Analytics 🔄
+4. **Phase 4**: Collaboration + Documentation 📝 

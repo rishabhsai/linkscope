@@ -138,13 +138,13 @@ const SortableLink: React.FC<SortableLinkProps> = ({
   }
 
   const handleStatusToggle = () => {
-    const statusMap = {
-      'active': 'todo',
-      'todo': 'completed',
-      'completed': 'active',
-      'archived': 'active'
-    } as const
-    onStatusChange(link.id, statusMap[link.status] || 'active')
+    // Only allow toggling if the item is already a todo or completed
+    if (link.status === 'todo') {
+      onStatusChange(link.id, 'completed')
+    } else if (link.status === 'completed') {
+      onStatusChange(link.id, 'todo')
+    }
+    // Don't allow toggling for 'active' or 'archived' items
   }
 
   return (
@@ -156,10 +156,11 @@ const SortableLink: React.FC<SortableLinkProps> = ({
       exit={{ opacity: 0, y: -20 }}
       className={`
         group relative bg-gray-800 rounded-lg border border-gray-700 shadow-sm hover:shadow-md 
-        transition-all duration-200 hover:border-gray-600
+        transition-all duration-200 hover:border-gray-600 cursor-pointer
         ${isSortableDragging ? 'opacity-50 scale-95' : ''}
         ${link.status === 'completed' ? 'opacity-60' : ''}
       `}
+      onClick={() => onLinkClick(link)}
     >
       {/* Drag Handle */}
       <div
@@ -176,7 +177,12 @@ const SortableLink: React.FC<SortableLinkProps> = ({
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <button
               onClick={handleStatusToggle}
-              className="flex-shrink-0 hover:scale-110 transition-transform"
+              className={`flex-shrink-0 transition-transform ${
+                link.status === 'todo' || link.status === 'completed' 
+                  ? 'hover:scale-110 cursor-pointer' 
+                  : 'cursor-default'
+              }`}
+              disabled={link.status !== 'todo' && link.status !== 'completed'}
             >
               {getStatusIcon(link.status)}
             </button>
@@ -217,6 +223,25 @@ const SortableLink: React.FC<SortableLinkProps> = ({
                 <Copy className="h-4 w-4 mr-2" />
                 Copy URL
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {link.status === 'active' && (
+                <DropdownMenuItem onClick={() => onStatusChange(link.id, 'todo')}>
+                  <Circle className="h-4 w-4 mr-2" />
+                  Mark as Todo
+                </DropdownMenuItem>
+              )}
+              {link.status === 'todo' && (
+                <DropdownMenuItem onClick={() => onStatusChange(link.id, 'active')}>
+                  <Target className="h-4 w-4 mr-2" />
+                  Remove from Todos
+                </DropdownMenuItem>
+              )}
+              {link.status === 'completed' && (
+                <DropdownMenuItem onClick={() => onStatusChange(link.id, 'active')}>
+                  <Target className="h-4 w-4 mr-2" />
+                  Remove from Todos
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onDelete(link.id)} className="text-red-600">
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -797,68 +822,29 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                   className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                 />
               </div>
-              
-              {useAI ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Additional Context
-                  </label>
-                  <Textarea
-                    placeholder="Optional: Help AI understand what you're looking for..."
-                    value={newLink.context}
-                    onChange={(e) => setNewLink(prev => ({ ...prev, context: e.target.value }))}
-                    rows={3}
-                    className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
-                  />
-                </div>
-              ) : (
+
+              {!useAI && (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">
                       Title
                     </label>
                     <Input
-                      placeholder="Link title"
+                      placeholder="Optional title for the link"
                       value={newLink.title}
                       onChange={(e) => setNewLink(prev => ({ ...prev, title: e.target.value }))}
                       className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                     />
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">
                       Summary *
                     </label>
-                    <Input
-                      placeholder="Brief description"
+                    <Textarea
+                      placeholder="Describe what this link is about"
                       value={newLink.summary}
                       onChange={(e) => setNewLink(prev => ({ ...prev, summary: e.target.value }))}
-                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Tags
-                    </label>
-                    <Input
-                      placeholder="tag1, tag2, tag3"
-                      value={newLink.tags}
-                      onChange={(e) => setNewLink(prev => ({ ...prev, tags: e.target.value }))}
-                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Context
-                    </label>
-                    <Textarea
-                      placeholder="Additional context or notes"
-                      value={newLink.context}
-                      onChange={(e) => setNewLink(prev => ({ ...prev, context: e.target.value }))}
-                      rows={3}
-                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 min-h-[120px]"
                     />
                   </div>
                 </>

@@ -1,5 +1,15 @@
-import { supabase } from '@/lib/supabase'
-import type { Database } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase';
+import type { Database } from '@/lib/supabase';
+
+interface AnalysisResult {
+  summary: string;
+  tags: string[];
+  insights?: string[];
+}
+
+type AnalyzedLink = Database['public']['Tables']['analyzed_links']['Row'];
+type InsertLink = Database['public']['Tables']['analyzed_links']['Insert'];
+type UpdateLink = Database['public']['Tables']['analyzed_links']['Update'];
 
 // Get username from localStorage
 function getUsername(): string {
@@ -7,10 +17,6 @@ function getUsername(): string {
   if (!username) throw new Error('No username set')
   return username
 }
-
-type AnalyzedLink = Database['public']['Tables']['analyzed_links']['Row']
-type InsertLink = Database['public']['Tables']['analyzed_links']['Insert']
-type UpdateLink = Database['public']['Tables']['analyzed_links']['Update']
 
 export interface LocalAnalyzedLink {
   id: string
@@ -410,5 +416,39 @@ export const linkService = {
       return { type: 'video', platform: 'tiktok' }
     }
     return { type: 'link', platform: 'other' }
+  },
+
+  analyzeLink: async (url: string, context?: string): Promise<AnalysisResult> => {
+    const response = await fetch("/api/analyze-link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url,
+        context,
+        prompt: `Please analyze this ${context ? 'link in the context of: ' + context : 'link'} and provide:
+1. A clear, detailed summary (2-3 sentences) that captures the main purpose and value of the content
+2. Relevant tags (5-8) that categorize the content, including:
+   - Content type (article, tutorial, documentation, etc.)
+   - Main topics and subtopics
+   - Technologies or tools mentioned
+   - Skill level if applicable
+3. Extract any key points, insights, or actionable items
+4. Consider the broader context and potential use cases
+
+Format your response as a JSON object with these fields:
+{
+  "summary": "Your detailed summary here",
+  "tags": ["tag1", "tag2", "tag3"],
+  "insights": ["key point 1", "key point 2"]
+}`
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
   }
-} 
+}; 
