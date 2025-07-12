@@ -32,7 +32,12 @@ cd <YOUR_PROJECT_NAME>
 # Step 3: Install the necessary dependencies.
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Set up Supabase (see SUPABASE_SETUP.md for detailed instructions)
+# Create a .env file with your Supabase credentials:
+# VITE_SUPABASE_URL=your_supabase_project_url
+# VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Step 5: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
 
@@ -59,6 +64,19 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (Database & Authentication)
+- OpenAI API (Link Analysis)
+
+## Features
+
+**LinkScope** is an AI-powered link analyzer that helps you:
+
+- **Analyze Any Link**: Get instant summaries and smart tags for websites, YouTube videos, Instagram Reels, and TikTok content
+- **Smart Organization**: Automatically categorize content with AI-generated tags
+- **User Accounts**: Secure authentication with Supabase
+- **Persistent Storage**: Your analyzed links are saved and synced across devices
+- **Search & Filter**: Find your saved links by URL, summary, or tags
+- **Beautiful UI**: Modern, responsive design with smooth animations
 
 ## How can I deploy this project?
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, ExternalLink, Settings, Sparkles, Video, Link as LinkIcon, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,29 +8,96 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { linkService, LocalAnalyzedLink } from "@/services/linkService";
 
-interface AnalyzedLink {
-  id: string;
-  url: string;
-  summary: string;
-  tags: string[];
-  context?: string;
-  createdAt: Date;
-  type: 'video' | 'link';
-  platform?: 'youtube' | 'instagram' | 'tiktok' | 'other';
-}
-
-const LinkAnalyzer = () => {
+export default function LinkAnalyzer({ username }: { username: string }) {
   const [url, setUrl] = useState("");
   const [context, setContext] = useState("");
-  const [apiKey, setApiKey] = useState(localStorage.getItem("openai-api-key") || "");
   const [isLoading, setIsLoading] = useState(false);
-  const [analyzedLinks, setAnalyzedLinks] = useState<AnalyzedLink[]>([]);
+  const [analyzedLinks, setAnalyzedLinks] = useState<LocalAnalyzedLink[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoadingLinks, setIsLoadingLinks] = useState(true);
+
+  // Load links on component mount
+  useEffect(() => {
+    const loadLinks = async () => {
+      try {
+        const links = await linkService.getLinks();
+        setAnalyzedLinks(links);
+      } catch (error) {
+        console.error('Error loading links:', error);
+        toast.error('Failed to load your links');
+      } finally {
+        setIsLoadingLinks(false);
+      }
+    };
+    loadLinks();
+  }, []);
+
+  const analyzeLink = async () => {
+    if (!url) {
+      toast.error("Please enter a URL");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      // Validate and normalize URL
+      let validUrl = url.trim();
+      if (!validUrl.startsWith('http://') && !validUrl.startsWith('https://')) {
+        validUrl = 'https://' + validUrl;
+      }
+      new URL(validUrl);
+      
+      const linkInfo = detectLinkType(validUrl);
+      const response = await fetch("/api/analyze-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: validUrl,
+          context,
+          type: linkInfo.type,
+          platform: linkInfo.platform,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      const data = await response.json();
+      
+      // Parse OpenAI response content and handle markdown formatting
+      let content = data.choices[0].message.content;
+      
+      // Remove markdown formatting if present
+      if (content.includes('```json')) {
+        content = content.replace(/```json\s*/, '').replace(/```\s*$/, '');
+      }
+      if (content.includes('```')) {
+        content = content.replace(/```\s*/, '').replace(/```\s*$/, '');
+      }
+      
+      const result = JSON.parse(content.trim());
+      const newLink = await linkService.createLink({
+        url: validUrl,
+        summary: result.summary,
+        tags: result.tags,
+        context,
+        type: linkInfo.type,
+        platform: linkInfo.platform,
+      });
+      setAnalyzedLinks(prev => [newLink, ...prev]);
+      setUrl("");
+      setContext("");
+      toast.success("Link analyzed successfully!");
+    } catch (error) {
+      console.error("Error analyzing link:", error);
+      toast.error("Failed to analyze link. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const detectLinkType = (url: string): { type: 'video' | 'link', platform: 'youtube' | 'instagram' | 'tiktok' | 'other' } => {
     const lowerUrl = url.toLowerCase();
-    
     if (lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) {
       return { type: 'video', platform: 'youtube' };
     }
@@ -40,101 +107,7 @@ const LinkAnalyzer = () => {
     if (lowerUrl.includes('tiktok.com')) {
       return { type: 'video', platform: 'tiktok' };
     }
-    
     return { type: 'link', platform: 'other' };
-  };
-
-  const saveApiKey = () => {
-    localStorage.setItem("openai-api-key", apiKey);
-    toast.success("API key saved securely!");
-  };
-
-  const analyzeLink = async () => {
-    if (!url) {
-      toast.error("Please enter a URL");
-      return;
-    }
-
-    if (!apiKey) {
-      toast.error("Please set your OpenAI API key first");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Validate URL
-      new URL(url);
-      
-      const linkInfo = detectLinkType(url);
-
-      const prompt = `Analyze this website URL: ${url}
-
-${context ? `Additional context: ${context}` : ""}
-
-${linkInfo.type === 'video' ? 'This is a video link.' : 'This is a regular website link.'}
-
-Please provide:
-1. A single word that best describes what this website/service does
-2. 3-5 relevant tags that would help categorize this link (like "productivity tool", "free resource", "design tool", "entertainment", "social media", etc.)
-
-Respond in this exact JSON format:
-{
-  "summary": "single-word-description",
-  "tags": ["tag1", "tag2", "tag3"]
-}`;
-
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: [
-            {
-              role: "system",
-              content: "You are a helpful assistant that analyzes websites and provides concise summaries and relevant tags. Always respond with valid JSON."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          max_tokens: 200,
-          temperature: 0.3,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const result = JSON.parse(data.choices[0].message.content);
-
-      const newLink: AnalyzedLink = {
-        id: Date.now().toString(),
-        url,
-        summary: result.summary,
-        tags: result.tags,
-        context,
-        createdAt: new Date(),
-        type: linkInfo.type,
-        platform: linkInfo.platform,
-      };
-
-      setAnalyzedLinks(prev => [newLink, ...prev]);
-      setUrl("");
-      setContext("");
-      toast.success("Link analyzed successfully!");
-    } catch (error) {
-      console.error("Error analyzing link:", error);
-      toast.error("Failed to analyze link. Please check your API key and try again.");
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const filteredLinks = analyzedLinks.filter(link =>
@@ -142,7 +115,6 @@ Respond in this exact JSON format:
     link.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
     link.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
   const videoLinks = filteredLinks.filter(link => link.type === 'video');
   const regularLinks = filteredLinks.filter(link => link.type === 'link');
 
@@ -159,7 +131,7 @@ Respond in this exact JSON format:
     }
   };
 
-  const renderLinkCard = (link: AnalyzedLink) => (
+  const renderLinkCard = (link: LocalAnalyzedLink) => (
     <Card key={link.id} className="shadow-notion-sm border-0 bg-gradient-card hover:shadow-purple transition-all duration-200 group">
       <CardContent className="p-6">
         <div className="flex items-start justify-between gap-4">
@@ -175,7 +147,6 @@ Respond in this exact JSON format:
                 {link.createdAt.toLocaleDateString()}
               </span>
             </div>
-            
             <div className="mb-3">
               <a
                 href={link.url}
@@ -187,13 +158,11 @@ Respond in this exact JSON format:
                 <ExternalLink className="h-3 w-3 flex-shrink-0" />
               </a>
             </div>
-
             {link.context && (
               <p className="text-sm text-muted-foreground mb-3 italic">
                 "{link.context}"
               </p>
             )}
-
             <div className="flex flex-wrap gap-2">
               {link.tags.map((tag, index) => (
                 <Badge key={index} variant="outline" className="text-xs border-purple-muted/30 hover:bg-purple-muted/10 transition-colors duration-200">
@@ -207,11 +176,21 @@ Respond in this exact JSON format:
     </Card>
   );
 
+  const handleChangeUsername = () => {
+    localStorage.removeItem("username");
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 relative">
+          <div className="absolute top-0 right-0 flex gap-2">
+            <Button variant="outline" size="sm" className="border-purple-muted/30 hover:bg-purple-muted/10" onClick={handleChangeUsername}>
+              Change Username
+            </Button>
+          </div>
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="relative">
               <Sparkles className="h-10 w-10 text-purple-accent" />
@@ -227,7 +206,6 @@ Respond in this exact JSON format:
             Instantly analyze any website or video with AI. Get one-word summaries and smart tags to organize your digital discoveries.
           </p>
         </div>
-
         {/* Main Input Card */}
         <Card className="mb-8 shadow-notion-md border border-purple-muted/20 bg-gradient-card">
           <CardHeader>
@@ -236,38 +214,6 @@ Respond in this exact JSON format:
                 <Plus className="h-5 w-5 text-purple-accent" />
                 Analyze New Link
               </CardTitle>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="icon" className="border-purple-muted/30 hover:bg-purple-muted/10">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-card border-purple-muted/20">
-                  <DialogHeader>
-                    <DialogTitle>OpenAI Settings</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">
-                        OpenAI API Key
-                      </label>
-                      <Input
-                        type="password"
-                        placeholder="sk-..."
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        className="border-purple-muted/30 focus:border-purple-accent"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Your API key is stored locally and never sent to our servers.
-                      </p>
-                    </div>
-                    <Button onClick={saveApiKey} className="w-full bg-purple-primary hover:bg-purple-secondary">
-                      Save API Key
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -306,8 +252,12 @@ Respond in this exact JSON format:
             </Button>
           </CardContent>
         </Card>
-
-        {analyzedLinks.length > 0 && (
+        {isLoadingLinks ? (
+          <div className="text-center py-12">
+            <div className="w-8 h-8 border-2 border-purple-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading your links...</p>
+          </div>
+        ) : analyzedLinks.length > 0 ? (
           <>
             {/* Search */}
             <div className="mb-6">
@@ -318,7 +268,6 @@ Respond in this exact JSON format:
                 className="max-w-md border-purple-muted/30 focus:border-purple-accent"
               />
             </div>
-
             {/* Tabbed Results */}
             <Tabs defaultValue="all" className="space-y-6">
               <TabsList className="grid w-full grid-cols-3 bg-secondary border border-purple-muted/20">
@@ -343,11 +292,9 @@ Respond in this exact JSON format:
                   Links ({regularLinks.length})
                 </TabsTrigger>
               </TabsList>
-
               <TabsContent value="all" className="space-y-4">
                 {filteredLinks.map(renderLinkCard)}
               </TabsContent>
-
               <TabsContent value="videos" className="space-y-4">
                 {videoLinks.length > 0 ? (
                   videoLinks.map(renderLinkCard)
@@ -363,7 +310,6 @@ Respond in this exact JSON format:
                   </div>
                 )}
               </TabsContent>
-
               <TabsContent value="links" className="space-y-4">
                 {regularLinks.length > 0 ? (
                   regularLinks.map(renderLinkCard)
@@ -381,9 +327,7 @@ Respond in this exact JSON format:
               </TabsContent>
             </Tabs>
           </>
-        )}
-
-        {analyzedLinks.length === 0 && (
+        ) : (
           <div className="text-center py-12">
             <div className="w-20 h-20 bg-purple-muted/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <Sparkles className="h-10 w-10 text-purple-accent" />
@@ -394,8 +338,7 @@ Respond in this exact JSON format:
             </p>
           </div>
         )}
-
-        {filteredLinks.length === 0 && analyzedLinks.length > 0 && (
+        {!isLoadingLinks && filteredLinks.length === 0 && analyzedLinks.length > 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
               No content matches your search. Try a different term.
@@ -405,6 +348,4 @@ Respond in this exact JSON format:
       </div>
     </div>
   );
-};
-
-export default LinkAnalyzer;
+}
