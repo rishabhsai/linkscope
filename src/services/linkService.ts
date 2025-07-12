@@ -43,14 +43,32 @@ export interface LocalAnalyzedLink {
 }
 
 export const linkService = {
-  // Fetch all links for all users
+  // Fetch shared links (active/archived) for all users + personal todos for current user
   async getLinks(): Promise<LocalAnalyzedLink[]> {
-    const { data, error } = await supabase
+    const user_id = getUsername()
+    
+    // Get all shared links (active/archived from all users)
+    const { data: sharedLinks, error: sharedError } = await supabase
       .from('analyzed_links')
       .select('*')
+      .in('status', ['active', 'archived'])
       .order('created_at', { ascending: false })
-    if (error) throw error
-    return (data || []).map(link => ({
+    
+    if (sharedError) throw sharedError
+    
+    // Get personal todos for current user
+    const { data: personalTodos, error: todosError } = await supabase
+      .from('analyzed_links')
+      .select('*')
+      .eq('user_id', user_id)
+      .in('status', ['todo', 'completed'])
+      .order('created_at', { ascending: false })
+    
+    if (todosError) throw todosError
+    
+         // Combine both datasets
+     const allLinks = [...(sharedLinks || []), ...(personalTodos || [])]
+     return allLinks.map(link => ({
       id: link.id,
       url: link.url,
       title: link.title || undefined,

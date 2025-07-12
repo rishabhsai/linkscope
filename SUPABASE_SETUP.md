@@ -62,15 +62,21 @@ CREATE INDEX idx_analyzed_links_created_at ON analyzed_links(created_at);
 -- Enable RLS
 ALTER TABLE analyzed_links ENABLE ROW LEVEL SECURITY;
 
--- Create policies: allow full access by username
-CREATE POLICY "Users can view own links" ON analyzed_links
-  FOR SELECT USING (user_id = current_setting('request.jwt.claims', true)::json->>'username');
+-- Create policies: shared links + personal todos
+CREATE POLICY "Users can view shared links and own todos" ON analyzed_links
+  FOR SELECT USING (
+    status IN ('active', 'archived') OR 
+    (status IN ('todo', 'completed') AND user_id = current_setting('request.jwt.claims', true)::json->>'username')
+  );
 
 CREATE POLICY "Users can insert own links" ON analyzed_links
   FOR INSERT WITH CHECK (user_id = current_setting('request.jwt.claims', true)::json->>'username');
 
-CREATE POLICY "Users can update own links" ON analyzed_links
-  FOR UPDATE USING (user_id = current_setting('request.jwt.claims', true)::json->>'username');
+CREATE POLICY "Users can update own links and shared links" ON analyzed_links
+  FOR UPDATE USING (
+    user_id = current_setting('request.jwt.claims', true)::json->>'username' OR
+    status IN ('active', 'archived')
+  );
 
 CREATE POLICY "Users can delete own links" ON analyzed_links
   FOR DELETE USING (user_id = current_setting('request.jwt.claims', true)::json->>'username');
