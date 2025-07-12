@@ -175,20 +175,19 @@ const SortableLink: React.FC<SortableLinkProps> = ({
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleStatusToggle();
-              }}
-              className={`flex-shrink-0 transition-transform p-2 ${
-                link.status === 'todo' || link.status === 'completed' 
-                  ? 'hover:scale-110 cursor-pointer' 
-                  : 'cursor-default'
-              }`}
-              disabled={link.status !== 'todo' && link.status !== 'completed'}
-            >
-              {getStatusIcon(link.status)}
-            </button>
+            <div onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={handleStatusToggle}
+                className={`flex-shrink-0 transition-transform p-2 ${
+                  link.status === 'todo' || link.status === 'completed' 
+                    ? 'hover:scale-110 cursor-pointer' 
+                    : 'cursor-default'
+                }`}
+                disabled={link.status !== 'todo' && link.status !== 'completed'}
+              >
+                {getStatusIcon(link.status)}
+              </button>
+            </div>
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {getPlatformIcon(link.platform)}
               <div className="flex-1 min-w-0">
