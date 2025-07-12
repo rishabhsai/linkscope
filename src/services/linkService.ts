@@ -154,7 +154,7 @@ export const linkService = {
       isManuallyAdded: data.is_manually_added || false,
       accessCount: data.access_count || 0,
       lastAccessed: data.last_accessed ? new Date(data.last_accessed) : undefined,
-      order: data.order || 0,
+      order: data.order_index || 0,
     }
   },
 
@@ -253,7 +253,7 @@ export const linkService = {
       isManuallyAdded: data.is_manually_added || false,
       accessCount: data.access_count || 0,
       lastAccessed: data.last_accessed ? new Date(data.last_accessed) : undefined,
-      order: data.order || 0,
+      order: data.order_index || 0,
     }
   },
 
@@ -325,7 +325,7 @@ export const linkService = {
       isManuallyAdded: link.is_manually_added || false,
       accessCount: link.access_count || 0,
       lastAccessed: link.last_accessed ? new Date(link.last_accessed) : undefined,
-      order: link.order || 0,
+      order: link.order_index || 0,
     }))
   },
 
@@ -359,7 +359,7 @@ export const linkService = {
       isManuallyAdded: link.is_manually_added || false,
       accessCount: link.access_count || 0,
       lastAccessed: link.last_accessed ? new Date(link.last_accessed) : undefined,
-      order: link.order || 0,
+      order: link.order_index || 0,
     }))
   },
 
@@ -393,7 +393,7 @@ export const linkService = {
       isManuallyAdded: link.is_manually_added || false,
       accessCount: link.access_count || 0,
       lastAccessed: link.last_accessed ? new Date(link.last_accessed) : undefined,
-      order: link.order || 0,
+      order: link.order_index || 0,
     }))
   },
 
