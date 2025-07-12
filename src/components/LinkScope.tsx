@@ -1021,11 +1021,11 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
 
         {/* Settings Dialog */}
         <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
-          <DialogContent className="max-w-md bg-gray-900 border-gray-700 text-white">
-            <DialogHeader>
+          <DialogContent className="max-w-md bg-gray-900 border-gray-700 text-white p-0">
+            <DialogHeader className="px-6 pt-6">
               <DialogTitle className="text-white">Settings</DialogTitle>
             </DialogHeader>
-            <div className="space-y-6">
+            <div className="space-y-6 px-6 pb-6 pt-2 max-h-[80vh] overflow-y-auto">
               {/* Export Section */}
               <div>
                 <h3 className="text-lg font-medium text-white mb-3">Export Data</h3>
