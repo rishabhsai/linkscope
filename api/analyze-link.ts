@@ -32,6 +32,7 @@ Guidelines:
 - For social media: Capture the content theme and platform type
 - Tags should be specific but not overly niche (e.g., "web-development", "productivity-tool", "react-tutorial")
 - Avoid generic tags like "interesting" or "useful"
+- Do not generate hyper-specific tags. Prefer broader, general tags (e.g., use 'recipe' instead of 'pancake-recipe').
 - Consider the user's context if provided
 
 Examples of good tags:
@@ -39,6 +40,7 @@ Examples of good tags:
 - "productivity-tool", "project-management", "collaboration"
 - "design-inspiration", "ui-patterns", "color-palette"
 - "machine-learning", "python-guide", "data-science"
+- "recipe" (not "pancake-recipe")
 
 Respond in this exact JSON format (no markdown formatting):
 {
