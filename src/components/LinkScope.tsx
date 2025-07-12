@@ -827,6 +827,20 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                 />
               </div>
 
+              {useAI && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Context (Optional)
+                  </label>
+                  <Textarea
+                    placeholder="Help AI understand what you're looking for in this link..."
+                    value={newLink.context}
+                    onChange={(e) => setNewLink(prev => ({ ...prev, context: e.target.value }))}
+                    className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 min-h-[80px]"
+                  />
+                </div>
+              )}
+
               {!useAI && (
                 <>
                   <div>
@@ -849,6 +863,28 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                       value={newLink.summary}
                       onChange={(e) => setNewLink(prev => ({ ...prev, summary: e.target.value }))}
                       className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 min-h-[120px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Tags
+                    </label>
+                    <Input
+                      placeholder="tag1, tag2, tag3"
+                      value={newLink.tags}
+                      onChange={(e) => setNewLink(prev => ({ ...prev, tags: e.target.value }))}
+                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Context (Optional)
+                    </label>
+                    <Textarea
+                      placeholder="Additional context or notes"
+                      value={newLink.context}
+                      onChange={(e) => setNewLink(prev => ({ ...prev, context: e.target.value }))}
+                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 min-h-[80px]"
                     />
                   </div>
                 </>
