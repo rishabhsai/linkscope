@@ -927,7 +927,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                   </div>
 
                   {/* Embedded website preview */}
-                  <div className="mt-4">
+                  <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">
                       Preview
                     </label>
