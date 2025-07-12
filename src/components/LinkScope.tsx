@@ -166,9 +166,10 @@ const SortableLink: React.FC<SortableLinkProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       className={`
-        group relative bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md 
-        transition-all duration-200 ${getPriorityColor(link.priority)}
+        group relative bg-gray-800 rounded-lg border border-gray-700 shadow-sm hover:shadow-md 
+        transition-all duration-200 hover:border-gray-600
         ${isSortableDragging ? 'opacity-50 scale-95' : ''}
+        ${link.status === 'completed' ? 'opacity-60' : ''}
       `}
     >
       {/* Drag Handle */}
@@ -193,13 +194,13 @@ const SortableLink: React.FC<SortableLinkProps> = ({
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {getPlatformIcon(link.platform)}
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-gray-900 truncate">
+                <h3 className={`font-medium truncate ${link.status === 'completed' ? 'text-gray-400 line-through' : 'text-white'}`}>
                   {link.title || link.summary}
                 </h3>
-                <p className="text-sm text-gray-500 truncate">
+                <p className="text-sm text-gray-400 truncate">
                   {formatDate(link.createdAt)}
                   {link.isManuallyAdded && (
-                    <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
+                    <span className="ml-2 px-2 py-0.5 bg-blue-900/50 text-blue-300 rounded-full text-xs">
                       Manual
                     </span>
                   )}
@@ -241,13 +242,13 @@ const SortableLink: React.FC<SortableLinkProps> = ({
           <a
             href={link.url}
             onClick={handleLinkClick}
-            className="block text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
+            className="block text-sm text-blue-400 hover:text-blue-300 hover:underline break-all"
           >
             {link.url}
           </a>
           
           {link.context && (
-            <p className="text-sm text-gray-600 italic">
+            <p className="text-sm text-gray-400 italic">
               "{link.context}"
             </p>
           )}
@@ -258,23 +259,16 @@ const SortableLink: React.FC<SortableLinkProps> = ({
                 <button
                   key={index}
                   onClick={() => onTagClick(tag)}
-                  className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs hover:bg-gray-200 transition-colors"
+                  className="px-2 py-1 bg-gray-700 text-gray-300 rounded-full text-xs hover:bg-gray-600 transition-colors"
                 >
                   #{tag}
                 </button>
               ))}
               {link.tags.length > 3 && (
-                <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">
+                <span className="px-2 py-1 bg-gray-700 text-gray-400 rounded-full text-xs">
                   +{link.tags.length - 3} more
                 </span>
               )}
-            </div>
-          )}
-          
-          {link.dueDate && (
-            <div className="flex items-center gap-1 text-xs text-gray-500">
-              <Calendar className="h-3 w-3" />
-              Due: {formatDate(link.dueDate)}
             </div>
           )}
         </div>
@@ -289,7 +283,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'todo' | 'completed' | 'archived'>('all')
+  const [activeTab, setActiveTab] = useState<'all' | 'todos'>('all')
   const [draggedLink, setDraggedLink] = useState<LocalAnalyzedLink | null>(null)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showDetailDialog, setShowDetailDialog] = useState(false)
@@ -345,29 +339,35 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
     loadLinks()
   }, [])
 
-  // Filter links based on search, tag, and tab
-  useEffect(() => {
-    let filtered = links
+      // Filter links based on search, tag, and tab
+    useEffect(() => {
+      let filtered = links
 
-    if (activeTab !== 'all') {
-      filtered = filtered.filter(link => link.status === activeTab)
-    }
+      if (activeTab === 'todos') {
+        filtered = filtered.filter(link => link.status === 'todo' || link.status === 'completed')
+        // Sort todos: incomplete first, completed at bottom
+        filtered.sort((a, b) => {
+          if (a.status === 'completed' && b.status !== 'completed') return 1
+          if (a.status !== 'completed' && b.status === 'completed') return -1
+          return 0
+        })
+      }
 
-    if (debouncedSearchTerm) {
-      filtered = filtered.filter(link => 
-        link.url.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        link.summary.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        link.title?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        link.tags.some(tag => tag.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
-      )
-    }
+      if (debouncedSearchTerm) {
+        filtered = filtered.filter(link => 
+          link.url.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          link.summary.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          link.title?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          link.tags.some(tag => tag.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
+        )
+      }
 
-    if (selectedTag) {
-      filtered = filtered.filter(link => link.tags.includes(selectedTag))
-    }
+      if (selectedTag) {
+        filtered = filtered.filter(link => link.tags.includes(selectedTag))
+      }
 
-    setFilteredLinks(filtered)
-  }, [links, debouncedSearchTerm, selectedTag, activeTab])
+      setFilteredLinks(filtered)
+    }, [links, debouncedSearchTerm, selectedTag, activeTab])
 
   const loadLinks = async () => {
     try {
@@ -587,28 +587,25 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
   const getTabCounts = () => {
     return {
       all: links.length,
-      active: links.filter(l => l.status === 'active').length,
-      todo: links.filter(l => l.status === 'todo').length,
-      completed: links.filter(l => l.status === 'completed').length,
-      archived: links.filter(l => l.status === 'archived').length,
+      todos: links.filter(l => l.status === 'todo' || l.status === 'completed').length,
     }
   }
 
   const tabCounts = getTabCounts()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-900">
       <div className="max-w-4xl mx-auto p-4">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Sparkles className="h-6 w-6 text-blue-600" />
+              <div className="p-2 bg-blue-900/30 rounded-lg">
+                <Sparkles className="h-6 w-6 text-blue-400" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">LinkScope</h1>
-                <p className="text-gray-600">Welcome back, {username}</p>
+                <h1 className="text-2xl font-bold text-white">LinkScope</h1>
+                <p className="text-gray-400">Welcome back, {username}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -619,7 +616,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Link
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 hover:bg-gray-800">
                 <Settings className="h-4 w-4" />
               </Button>
             </div>
@@ -633,14 +630,14 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                 placeholder="Search links..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400"
               />
             </div>
             {selectedTag && (
               <Button 
                 variant="outline" 
                 onClick={() => setSelectedTag(null)}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap border-gray-700 text-gray-300 hover:bg-gray-800"
               >
                 <X className="h-4 w-4 mr-2" />
                 #{selectedTag}
@@ -650,12 +647,13 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
-              <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
-              <TabsTrigger value="todo">Todo ({tabCounts.todo})</TabsTrigger>
-              <TabsTrigger value="completed">Done ({tabCounts.completed})</TabsTrigger>
-              <TabsTrigger value="archived">Archived ({tabCounts.archived})</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-700">
+              <TabsTrigger value="all" className="text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                All ({tabCounts.all})
+              </TabsTrigger>
+              <TabsTrigger value="todos" className="text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                Todos ({tabCounts.todos})
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -664,18 +662,18 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading your links...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading your links...</p>
             </div>
           </div>
         ) : filteredLinks.length === 0 ? (
           <div className="text-center py-12">
             <div className="max-w-md mx-auto">
-              <div className="p-3 bg-gray-100 rounded-full w-fit mx-auto mb-4">
+              <div className="p-3 bg-gray-800 rounded-full w-fit mx-auto mb-4">
                 <Link2 className="h-8 w-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No links found</h3>
-              <p className="text-gray-600 mb-6">
+              <h3 className="text-lg font-medium text-white mb-2">No links found</h3>
+              <p className="text-gray-400 mb-6">
                 {searchTerm || selectedTag ? 'Try adjusting your search or filters' : 'Add your first link to get started'}
               </p>
               <Button onClick={() => setShowAddDialog(true)} className="bg-blue-600 hover:bg-blue-700">
@@ -729,9 +727,9 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
 
         {/* Add/Edit Dialog */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md bg-gray-900 border-gray-700 text-white">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-white">
                 {editingLink ? 'Edit Link' : 'Add New Link'}
               </DialogTitle>
             </DialogHeader>
@@ -848,7 +846,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
               </div>
               
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                <Button variant="outline" onClick={() => setShowAddDialog(false)} className="border-gray-700 text-gray-300 hover:bg-gray-800">
                   Cancel
                 </Button>
                 <Button
@@ -872,11 +870,11 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
 
         {/* Detail Dialog */}
         <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl bg-gray-900 border-gray-700 text-white">
             {selectedLink && (
               <>
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
+                  <DialogTitle className="flex items-center gap-2 text-white">
                     {selectedLink.type === 'video' ? (
                       <Video className="h-5 w-5" />
                     ) : (
@@ -887,37 +885,37 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       URL
                     </label>
                     <a
                       href={selectedLink.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 hover:underline break-all"
+                      className="text-blue-400 hover:text-blue-300 hover:underline break-all"
                     >
                       {selectedLink.url}
                     </a>
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       Summary
                     </label>
-                    <p className="text-gray-900">{selectedLink.summary}</p>
+                    <p className="text-gray-100">{selectedLink.summary}</p>
                   </div>
                   
                   {selectedLink.context && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
                         Context
                       </label>
-                      <p className="text-gray-900">{selectedLink.context}</p>
+                      <p className="text-gray-100">{selectedLink.context}</p>
                     </div>
                   )}
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       Tags
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -925,7 +923,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                         <button
                           key={index}
                           onClick={() => handleTagClick(tag)}
-                          className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
+                          className="px-2 py-1 bg-blue-900/50 text-blue-300 rounded-full text-sm hover:bg-blue-900/70 transition-colors"
                         >
                           #{tag}
                         </button>
@@ -935,36 +933,20 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
                         Status
                       </label>
                       <div className="flex items-center gap-2">
                         {getStatusIcon(selectedLink.status)}
-                        <span className="capitalize">{selectedLink.status}</span>
+                        <span className="capitalize text-gray-100">{selectedLink.status}</span>
                       </div>
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Priority
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <AlertCircle className={`h-4 w-4 ${
-                          selectedLink.priority === 'high' ? 'text-red-500' :
-                          selectedLink.priority === 'medium' ? 'text-orange-500' :
-                          'text-green-500'
-                        }`} />
-                        <span className="capitalize">{selectedLink.priority}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
                         Created
                       </label>
-                      <p className="text-gray-900">{new Intl.DateTimeFormat('en-US', {
+                      <p className="text-gray-100">{new Intl.DateTimeFormat('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
@@ -972,17 +954,10 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                         minute: '2-digit'
                       }).format(selectedLink.createdAt)}</p>
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Views
-                      </label>
-                      <p className="text-gray-900">{selectedLink.accessCount}</p>
-                    </div>
                   </div>
                   
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowDetailDialog(false)}>
+                    <Button variant="outline" onClick={() => setShowDetailDialog(false)} className="border-gray-700 text-gray-300 hover:bg-gray-800">
                       Close
                     </Button>
                     <Button
