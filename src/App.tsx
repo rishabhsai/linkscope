@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import LinkAnalyzer from "@/components/LinkAnalyzer";
+import LinkScope from "@/components/LinkScope";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,7 @@ const App = () => {
         {username && (
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<LinkAnalyzer username={username} />} />
+              <Route path="/" element={<LinkScope username={username} />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
