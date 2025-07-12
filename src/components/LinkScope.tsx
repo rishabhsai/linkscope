@@ -120,18 +120,7 @@ const SortableLink: React.FC<SortableLinkProps> = ({
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'border-red-200 bg-red-50'
-      case 'medium':
-        return 'border-orange-200 bg-orange-50'
-      case 'low':
-        return 'border-green-200 bg-green-50'
-      default:
-        return 'border-gray-200 bg-gray-50'
-    }
-  }
+
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -311,8 +300,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
     summary: '',
     tags: '',
     context: '',
-    priority: 'medium' as 'low' | 'medium' | 'high',
-    status: 'active' as 'active' | 'todo' | 'completed' | 'archived',
+    status: 'active' as 'active' | 'todo' | 'completed',
   })
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [useAI, setUseAI] = useState(true)
@@ -456,7 +444,6 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
           tags: result.tags || newLink.tags.split(',').map(t => t.trim()),
           context: newLink.context || undefined,
           status: newLink.status,
-          priority: newLink.priority,
           type: linkService.detectLinkType(newLink.url).type,
           platform: linkService.detectLinkType(newLink.url).platform,
           order: links.length,
@@ -470,7 +457,6 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
           tags: newLink.tags.split(',').map(t => t.trim()).filter(t => t),
           context: newLink.context || undefined,
           status: newLink.status,
-          priority: newLink.priority,
         })
       }
 
@@ -481,7 +467,6 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
         summary: '',
         tags: '',
         context: '',
-        priority: 'medium',
         status: 'active',
       })
       setShowAddDialog(false)
@@ -502,7 +487,6 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
       summary: link.summary,
       tags: link.tags.join(', '),
       context: link.context || '',
-      priority: link.priority,
       status: link.status,
     })
     setShowAddDialog(true)
@@ -519,7 +503,6 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
         tags: newLink.tags.split(',').map(t => t.trim()).filter(t => t),
         context: newLink.context || undefined,
         status: newLink.status,
-        priority: newLink.priority,
       })
 
       setLinks(prev => prev.map(l => l.id === editingLink.id ? updatedLink : l))
@@ -530,7 +513,6 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
         summary: '',
         tags: '',
         context: '',
-        priority: 'medium',
         status: 'active',
       })
       setShowAddDialog(false)
