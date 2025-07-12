@@ -898,10 +898,10 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
 
         {/* Detail Dialog */}
         <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-          <DialogContent className="max-w-2xl bg-gray-900 border-gray-700 text-white">
+          <DialogContent className="max-w-2xl bg-gray-900 border-gray-700 text-white p-0">
             {selectedLink && (
               <>
-                <DialogHeader>
+                <DialogHeader className="px-6 pt-6">
                   <DialogTitle className="flex items-center gap-2 text-white">
                     {selectedLink.type === 'video' ? (
                       <Video className="h-5 w-5" />
@@ -911,7 +911,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                     {selectedLink.title || selectedLink.summary}
                   </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
+                <div className="space-y-4 px-6 pb-6 pt-2 max-h-[80vh] overflow-y-auto">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">
                       URL
