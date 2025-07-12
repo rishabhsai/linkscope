@@ -43,13 +43,11 @@ export interface LocalAnalyzedLink {
 }
 
 export const linkService = {
-  // Fetch all links for the current user
+  // Fetch all links for all users
   async getLinks(): Promise<LocalAnalyzedLink[]> {
-    const user_id = getUsername()
     const { data, error } = await supabase
       .from('analyzed_links')
       .select('*')
-      .eq('user_id', user_id)
       .order('created_at', { ascending: false })
     if (error) throw error
     return (data || []).map(link => ({

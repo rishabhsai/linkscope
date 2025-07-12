@@ -176,8 +176,11 @@ const SortableLink: React.FC<SortableLinkProps> = ({
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <button
-              onClick={handleStatusToggle}
-              className={`flex-shrink-0 transition-transform ${
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStatusToggle();
+              }}
+              className={`flex-shrink-0 transition-transform p-2 ${
                 link.status === 'todo' || link.status === 'completed' 
                   ? 'hover:scale-110 cursor-pointer' 
                   : 'cursor-default'
@@ -194,6 +197,11 @@ const SortableLink: React.FC<SortableLinkProps> = ({
                 </h3>
                 <p className="text-sm text-gray-400 truncate">
                   {formatDate(link.createdAt)}
+                  {link.userId && (
+                    <span className="ml-2 px-2 py-0.5 bg-green-900/50 text-green-300 rounded-full text-xs">
+                      by {link.userId}
+                    </span>
+                  )}
                   {link.isManuallyAdded && (
                     <span className="ml-2 px-2 py-0.5 bg-blue-900/50 text-blue-300 rounded-full text-xs">
                       Manual
@@ -206,7 +214,12 @@ const SortableLink: React.FC<SortableLinkProps> = ({
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
