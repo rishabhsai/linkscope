@@ -668,6 +668,72 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
 
   const tabCounts = getTabCounts()
 
+  function renderPreview(link: LocalAnalyzedLink) {
+    if (link.platform === 'youtube') {
+      const match = link.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)
+      const videoId = match ? match[1] : null
+      return videoId ? (
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}`}
+          title="YouTube Video"
+          className="w-full h-[350px] bg-black"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{ border: 'none' }}
+        />
+      ) : (
+        <div className="p-4 text-center text-gray-400">Invalid YouTube URL</div>
+      )
+    }
+    if (link.platform === 'instagram') {
+      const match = link.url.match(/instagram\.com\/p\/([A-Za-z0-9_-]+)/)
+      const shortcode = match ? match[1] : null
+      return shortcode ? (
+        <iframe
+          src={`https://www.instagram.com/p/${shortcode}/embed`}
+          title="Instagram Post"
+          className="w-full h-[350px] bg-black"
+          allow="encrypted-media"
+          style={{ border: 'none' }}
+        />
+      ) : (
+        <div className="p-4 text-center text-gray-400">Invalid Instagram URL</div>
+      )
+    }
+    if (link.platform === 'tiktok') {
+      const match = link.url.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/)
+      const videoId = match ? match[1] : null
+      return videoId ? (
+        <iframe
+          src={`https://www.tiktok.com/embed/v2/${videoId}`}
+          title="TikTok Video"
+          className="w-full h-[350px] bg-black"
+          allow="autoplay; encrypted-media"
+          style={{ border: 'none' }}
+        />
+      ) : (
+        <div className="p-4 text-center text-gray-400">Invalid TikTok URL</div>
+      )
+    }
+    // Default: website preview
+    return (
+      <iframe
+        src={link.url}
+        title="Website Preview"
+        className="w-full h-[350px] bg-gray-900"
+        sandbox="allow-scripts allow-same-origin allow-popups"
+        style={{ border: 'none' }}
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+          const fallback = document.createElement('div');
+          fallback.className = 'p-4 text-center text-gray-400';
+          fallback.innerText = 'Preview unavailable for this site.';
+          e.currentTarget.parentNode.appendChild(fallback);
+        }}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-900">
       <div className="max-w-4xl mx-auto p-4">
@@ -840,6 +906,14 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                   className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                 />
               </div>
+
+              {/* QOL warning for video/social links in AI mode */}
+              {useAI &&
+                /youtube\.com|youtu\.be|tiktok\.com|instagram\.com/.test(newLink.url) && (
+                  <div className="bg-yellow-900/60 border-l-4 border-yellow-500 text-yellow-200 px-4 py-2 rounded mb-2 text-sm">
+                    <strong>Note:</strong> AI may not generate a good summary for this link. For best results, please provide some context about the video or post in the context box below.
+                  </div>
+                )}
 
               {useAI && (
                 <div>
@@ -1032,20 +1106,7 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                       Preview
                     </label>
                     <div className="rounded-lg border border-gray-700 overflow-hidden bg-gray-800">
-                      <iframe
-                        src={selectedLink.url}
-                        title="Website Preview"
-                        className="w-full h-[350px] bg-gray-900"
-                        sandbox="allow-scripts allow-same-origin allow-popups"
-                        style={{ border: 'none' }}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          const fallback = document.createElement('div');
-                          fallback.className = 'p-4 text-center text-gray-400';
-                          fallback.innerText = 'Preview unavailable for this site.';
-                          e.currentTarget.parentNode.appendChild(fallback);
-                        }}
-                      />
+                      {renderPreview(selectedLink)}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">Some sites may not allow embedding for security reasons.</div>
                   </div>
