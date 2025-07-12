@@ -982,45 +982,29 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                       }).format(selectedLink.createdAt)}</p>
                     </div>
                   </div>
-                  
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowDetailDialog(false)} className="border-gray-700 text-gray-300 hover:bg-gray-800">
-                      Close
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        handleEditLink(selectedLink)
-                        setShowDetailDialog(false)
-                      }}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
+                  {/* Embedded website preview (last, inside scrollable area) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Preview
+                    </label>
+                    <div className="rounded-lg border border-gray-700 overflow-hidden bg-gray-800">
+                      <iframe
+                        src={selectedLink.url}
+                        title="Website Preview"
+                        className="w-full h-[350px] bg-gray-900"
+                        sandbox="allow-scripts allow-same-origin allow-popups"
+                        style={{ border: 'none' }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = document.createElement('div');
+                          fallback.className = 'p-4 text-center text-gray-400';
+                          fallback.innerText = 'Preview unavailable for this site.';
+                          e.currentTarget.parentNode.appendChild(fallback);
+                        }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">Some sites may not allow embedding for security reasons.</div>
                   </div>
-                </div>
-                {/* Embedded website preview (now at the end) */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Preview
-                  </label>
-                  <div className="rounded-lg border border-gray-700 overflow-hidden bg-gray-800">
-                    <iframe
-                      src={selectedLink.url}
-                      title="Website Preview"
-                      className="w-full h-[350px] bg-gray-900"
-                      sandbox="allow-scripts allow-same-origin allow-popups"
-                      style={{ border: 'none' }}
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        const fallback = document.createElement('div');
-                        fallback.className = 'p-4 text-center text-gray-400';
-                        fallback.innerText = 'Preview unavailable for this site.';
-                        e.currentTarget.parentNode.appendChild(fallback);
-                      }}
-                    />
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">Some sites may not allow embedding for security reasons.</div>
                 </div>
               </>
             )}
