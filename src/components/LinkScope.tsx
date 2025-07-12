@@ -995,9 +995,25 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                         : 'bg-gray-700/50 text-gray-300 border border-gray-600 hover:bg-gray-700 hover:text-white'
                     }`}
                   >
-                    <Circle className={`h-4 w-4 transition-colors ${
-                      newLink.status === 'todo' ? 'text-orange-500' : 'text-gray-400'
-                    }`} />
+                    <div className={`relative w-4 h-4 border-2 rounded transition-all duration-200 ${
+                      newLink.status === 'todo' 
+                        ? 'border-orange-500 bg-orange-500' 
+                        : 'border-gray-400 bg-transparent'
+                    }`}>
+                      {newLink.status === 'todo' && (
+                        <svg 
+                          className="absolute inset-0 w-full h-full text-white" 
+                          fill="currentColor" 
+                          viewBox="0 0 20 20"
+                        >
+                          <path 
+                            fillRule="evenodd" 
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" 
+                            clipRule="evenodd" 
+                          />
+                        </svg>
+                      )}
+                    </div>
                     <span className="text-sm font-medium">Mark as Todo</span>
                   </label>
                 </div>
