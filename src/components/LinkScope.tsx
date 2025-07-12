@@ -986,6 +986,15 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Created by
+                      </label>
+                      <div className="flex items-center gap-2 text-gray-100">
+                        <User className="h-4 w-4 text-blue-400" />
+                        {selectedLink.userId || 'Unknown'}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
                         Created
                       </label>
                       <p className="text-gray-100">{new Intl.DateTimeFormat('en-US', {
