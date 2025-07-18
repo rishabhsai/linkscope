@@ -1,19 +1,17 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+interface AnalysisResult {
+  summary: string;
+  tags: string[];
+}
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { url, context, type, platform, apiKey } = req.body;
-  
-  // Try to use user-provided API key first, fall back to environment variable
-  const openaiApiKey = apiKey || process.env.OPENAI_API_KEY;
-  if (!openaiApiKey) {
-    return res.status(400).json({ error: 'OpenAI API key is required. Please provide your API key in the request or configure it in the environment.' });
-  }
-  if (!url) {
-    return res.status(400).json({ error: 'Missing url' });
+export const analyzeLink = async (
+  url: string,
+  context: string,
+  type: 'video' | 'link',
+  platform: string,
+  apiKey: string
+): Promise<AnalysisResult> => {
+  if (!apiKey) {
+    throw new Error('OpenAI API key is required');
   }
 
   // Enhanced prompt with better instructions
@@ -50,11 +48,11 @@ Respond in this exact JSON format (no markdown formatting):
 }`;
 
   try {
-    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o',
@@ -86,15 +84,33 @@ Always respond with valid JSON only, no markdown formatting or extra text.`
       }),
     });
     
-    if (!openaiRes.ok) {
-      console.error('OpenAI API error:', await openaiRes.text());
-      return res.status(openaiRes.status).json({ error: 'OpenAI API error' });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API error:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${response.statusText}`);
     }
     
-    const data = await openaiRes.json();
-    res.status(200).json(data);
+    const data = await response.json();
+    let content = data.choices[0].message.content;
+    
+    // Remove markdown formatting if present
+    if (content.includes('```json')) {
+      content = content.replace(/```json\s*/, '').replace(/```\s*$/, '');
+    }
+    if (content.includes('```')) {
+      content = content.replace(/```\s*/, '').replace(/```\s*$/, '');
+    }
+    
+    const result = JSON.parse(content.trim());
+    return {
+      summary: result.summary,
+      tags: result.tags
+    };
   } catch (error) {
-    console.error('API error:', error);
-    res.status(500).json({ error: 'Failed to call OpenAI API' });
+    console.error('Error calling OpenAI API:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to analyze link with OpenAI');
   }
-} 
+}; 

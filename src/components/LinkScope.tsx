@@ -47,6 +47,8 @@ import {
   Edit,
   Trash2,
   Eye,
+  EyeOff,
+  Save,
   Copy,
   Share2,
   Bookmark,
@@ -59,14 +61,17 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import { linkService, LocalAnalyzedLink } from '@/services/linkService'
 import { useDebounce } from 'react-use'
+import { useSettings } from '@/contexts/SettingsContext'
+import { analyzeLink } from '@/services/openaiService'
 
 interface LinkScopeProps {
   username: string
@@ -319,6 +324,11 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
   const [selectedLink, setSelectedLink] = useState<LocalAnalyzedLink | null>(null)
   const [editingLink, setEditingLink] = useState<LocalAnalyzedLink | null>(null)
   
+  // Settings management
+  const { apiKey, setApiKey, hasApiKey, clearApiKey } = useSettings()
+  const [tempApiKey, setTempApiKey] = useState(apiKey)
+  const [showApiKey, setShowApiKey] = useState(false)
+  
   // Helper functions
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -451,6 +461,11 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
       toast.error('Please enter a summary')
       return
     }
+    
+    if (useAI && !hasApiKey) {
+      toast.error('Please configure your OpenAI API key in the settings first')
+      return
+    }
 
     try {
       setIsAnalyzing(true)
@@ -458,33 +473,14 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
 
       if (useAI) {
         // Use AI analysis
-        const response = await fetch('/api/analyze-link', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            url: newLink.url,
-            context: newLink.context,
-            type: linkService.detectLinkType(newLink.url).type,
-            platform: linkService.detectLinkType(newLink.url).platform,
-          }),
-        })
-
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`)
-        }
-
-        const data = await response.json()
-        let content = data.choices[0].message.content
-
-        // Clean up response
-        if (content.includes('```json')) {
-          content = content.replace(/```json\s*/, '').replace(/```\s*$/, '')
-        }
-        if (content.includes('```')) {
-          content = content.replace(/```\s*/, '').replace(/```\s*$/, '')
-        }
-
-        const result = JSON.parse(content.trim())
+        const linkInfo = linkService.detectLinkType(newLink.url)
+        const result = await analyzeLink(
+          newLink.url,
+          newLink.context || '',
+          linkInfo.type,
+          linkInfo.platform,
+          apiKey
+        )
         createdLink = await linkService.createLink({
           url: newLink.url,
           title: newLink.title || undefined,
@@ -650,6 +646,27 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
     localStorage.removeItem('username')
     window.location.reload()
   }
+
+  // API Key management functions
+  const handleSaveApiKey = () => {
+    setApiKey(tempApiKey)
+    toast.success(tempApiKey ? "API key saved successfully!" : "API key removed")
+  }
+
+  const handleClearApiKey = () => {
+    clearApiKey()
+    setTempApiKey('')
+    toast.success("API key removed")
+  }
+
+  const isValidApiKey = (key: string) => {
+    return key.startsWith('sk-') && key.length > 20
+  }
+
+  // Update tempApiKey when apiKey changes (e.g., on dialog open)
+  useEffect(() => {
+    setTempApiKey(apiKey)
+  }, [apiKey])
 
   const getAllTags = () => {
     const tagSet = new Set<string>()
@@ -873,6 +890,9 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
               <DialogTitle className="text-white">
                 {editingLink ? 'Edit Link' : 'Add New Link'}
               </DialogTitle>
+              <DialogDescription>
+                {editingLink ? 'Update your link details and settings.' : 'Add a new link to your collection with AI analysis or manual entry.'}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center gap-2">
@@ -1056,6 +1076,9 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
                     )}
                     {selectedLink.title || selectedLink.summary}
                   </DialogTitle>
+                  <DialogDescription>
+                    View detailed information about this link and its metadata.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 px-6 pb-6 pt-2 max-h-[80vh] overflow-y-auto">
                   <div>
@@ -1149,8 +1172,105 @@ const LinkScope: React.FC<LinkScopeProps> = ({ username }) => {
           <DialogContent className="max-w-md bg-gray-900 border-gray-700 text-white p-0">
             <DialogHeader className="px-6 pt-6">
               <DialogTitle className="text-white">Settings</DialogTitle>
+              <DialogDescription>
+                Configure your OpenAI API key and manage application settings.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-6 px-6 pb-6 pt-2 max-h-[80vh] overflow-y-auto">
+              {/* API Key Section */}
+              <div>
+                <h3 className="text-lg font-medium text-white mb-3">OpenAI API Key</h3>
+                <div className="space-y-4">
+                  {/* API Key Status */}
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-gray-300">Status</Label>
+                    <Badge variant={hasApiKey ? "default" : "destructive"}>
+                      {hasApiKey ? "Configured" : "Not Set"}
+                    </Badge>
+                  </div>
+
+                  {/* API Key Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="apiKey" className="text-sm font-medium text-gray-300">
+                      API Key
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="apiKey"
+                        type={showApiKey ? "text" : "password"}
+                        placeholder="sk-..."
+                        value={tempApiKey}
+                        onChange={(e) => setTempApiKey(e.target.value)}
+                        className={`pr-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400 ${
+                          tempApiKey && !isValidApiKey(tempApiKey) ? 'border-red-500' : ''
+                        }`}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-400 hover:text-white"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                      >
+                        {showApiKey ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    {tempApiKey && !isValidApiKey(tempApiKey) && (
+                      <p className="text-sm text-red-400">
+                        Please enter a valid OpenAI API key (starts with 'sk-')
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-400">
+                      Get your API key from{" "}
+                      <a
+                        href="https://platform.openai.com/api-keys"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:underline"
+                      >
+                        OpenAI Platform
+                      </a>
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleSaveApiKey}
+                      disabled={tempApiKey && !isValidApiKey(tempApiKey)}
+                      className="flex-1 gap-2 bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Save className="h-4 w-4" />
+                      Save
+                    </Button>
+                    {hasApiKey && (
+                      <Button
+                        variant="outline"
+                        onClick={handleClearApiKey}
+                        className="gap-2 text-red-400 hover:text-red-300 border-gray-700 hover:bg-gray-800"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="bg-blue-950/40 p-3 rounded-lg border border-blue-800/50">
+                    <p className="text-sm text-blue-300">
+                      <strong>Privacy:</strong> Your API key is stored locally in your browser and never sent to our servers.
+                      All AI analysis requests are made directly from your browser to OpenAI.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-gray-700" />
+
               {/* Export Section */}
               <div>
                 <h3 className="text-lg font-medium text-white mb-3">Export Data</h3>

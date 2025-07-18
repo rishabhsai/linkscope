@@ -10,6 +10,7 @@ import LinkScope from "@/components/LinkScope";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 
 const queryClient = new QueryClient();
 
@@ -66,22 +67,24 @@ const App = () => {
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <UsernameDialog open={showDialog} onSave={handleSaveUsername} />
-        {username && (
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<LinkScope username={username} />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        )}
-      </TooltipProvider>
-    </QueryClientProvider>
+    <SettingsProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <UsernameDialog open={showDialog} onSave={handleSaveUsername} />
+          {username && (
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<LinkScope username={username} />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          )}
+        </TooltipProvider>
+      </QueryClientProvider>
+    </SettingsProvider>
   );
 };
 

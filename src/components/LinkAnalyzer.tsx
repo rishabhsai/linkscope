@@ -9,6 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { linkService, LocalAnalyzedLink } from "@/services/linkService";
+import { useSettings } from "@/contexts/SettingsContext";
+import SettingsDialog from "@/components/SettingsDialog";
+import { analyzeLink } from "@/services/openaiService";
 
 export default function LinkAnalyzer({ username }: { username: string }) {
   const [url, setUrl] = useState("");
@@ -17,6 +20,9 @@ export default function LinkAnalyzer({ username }: { username: string }) {
   const [analyzedLinks, setAnalyzedLinks] = useState<LocalAnalyzedLink[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingLinks, setIsLoadingLinks] = useState(true);
+  
+  // Settings context for API key
+  const { apiKey, hasApiKey } = useSettings();
 
   // Load links on component mount
   useEffect(() => {
@@ -39,6 +45,12 @@ export default function LinkAnalyzer({ username }: { username: string }) {
       toast.error("Please enter a URL");
       return;
     }
+    
+    if (!hasApiKey) {
+      toast.error("Please configure your OpenAI API key in the settings first");
+      return;
+    }
+    
     setIsLoading(true);
     try {
       // Validate and normalize URL
@@ -49,33 +61,13 @@ export default function LinkAnalyzer({ username }: { username: string }) {
       new URL(validUrl);
       
       const linkInfo = detectLinkType(validUrl);
-      const response = await fetch("/api/analyze-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: validUrl,
-          context,
-          type: linkInfo.type,
-          platform: linkInfo.platform,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Parse OpenAI response content and handle markdown formatting
-      let content = data.choices[0].message.content;
-      
-      // Remove markdown formatting if present
-      if (content.includes('```json')) {
-        content = content.replace(/```json\s*/, '').replace(/```\s*$/, '');
-      }
-      if (content.includes('```')) {
-        content = content.replace(/```\s*/, '').replace(/```\s*$/, '');
-      }
-      
-      const result = JSON.parse(content.trim());
+      const result = await analyzeLink(
+        validUrl,
+        context,
+        linkInfo.type,
+        linkInfo.platform,
+        apiKey
+      );
       const newLink = await linkService.createLink({
         url: validUrl,
         summary: result.summary,
@@ -187,6 +179,7 @@ export default function LinkAnalyzer({ username }: { username: string }) {
         {/* Header */}
         <div className="text-center mb-12 relative">
           <div className="absolute top-0 right-0 flex gap-2">
+            <SettingsDialog />
             <Button variant="outline" size="sm" className="border-purple-muted/30 hover:bg-purple-muted/10" onClick={handleChangeUsername}>
               Change Username
             </Button>
